@@ -1,0 +1,41 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: kubic-service
+spec:
+  replicas: 1
+  revisionHistoryLimit: 5
+  strategy:
+    rollingUpdate:
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: kubic-service
+  template:
+    metadata:
+      labels:
+        app: kubic-service
+        version: latest
+    spec:
+      containers:
+      - name: kubic-service
+        image: idubrov/kubic:latest
+        ports:
+        - name: http
+          containerPort: 8080
+        resources:
+          requests:
+            memory: "1000Mi"
+            cpu: "50m"
+          limits:
+            memory: "1000Mi"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 5
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 5

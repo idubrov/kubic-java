@@ -1,0 +1,77 @@
+buildscript {
+    dependencies {
+        classpath 'se.transmode.gradle:gradle-docker:1.2'
+    }
+}
+
+plugins {
+    id 'io.spring.dependency-management' version '1.0.3.RELEASE'
+    id 'org.springframework.boot' version '1.5.6.RELEASE'
+}
+
+apply plugin: 'java'
+apply plugin: 'application'
+apply plugin: se.transmode.gradle.plugins.docker.DockerPlugin
+
+sourceCompatibility = '1.8'
+targetCompatibility = '1.8'
+mainClassName = 'kubic.Main'
+
+repositories {
+    mavenCentral()
+}
+
+dependencyManagement {
+    imports {
+        mavenBom 'org.springframework.boot:spring-boot-dependencies:1.5.6.RELEASE'
+    }
+}
+
+dependencies {
+    compile 'javax.servlet:javax.servlet-api:3.1.0'
+    compile 'org.springframework.boot:spring-boot-starter-web'
+    compile 'org.springframework.boot:spring-boot-starter-actuator'
+}
+
+
+docker {
+    baseImage 'anapsix/alpine-java:8_server-jre'
+}
+
+distDocker {
+    tagVersion = 'latest'
+    tag = 'idubrov/kubic'
+    push = true
+    exposePort 8080
+}
+
+task kubeDeploy {
+    mustRunAfter distDocker
+    doLast {
+        exec {
+            commandLine 'kubectl', 'apply', '-f', file('src/main/kube')
+        }
+    }
+}
+
+task kubeUndeploy {
+    doLast {
+        exec {
+            commandLine 'kubectl', 'delete', 'service', 'kubic-service'
+            ignoreExitValue true
+        }
+        exec {
+            commandLine 'kubectl', 'delete', 'deployment', 'kubic-service'
+            ignoreExitValue true
+        }
+    }
+}
+
+task deploy {
+    dependsOn distDocker
+    dependsOn kubeDeploy
+}
+
+task undeploy {
+    dependsOn kubeUndeploy
+}
