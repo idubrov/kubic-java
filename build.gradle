@@ -57,11 +57,7 @@ task kubeDeploy {
 task kubeUndeploy {
     doLast {
         exec {
-            commandLine 'kubectl', 'delete', 'service', 'kubic-service'
-            ignoreExitValue true
-        }
-        exec {
-            commandLine 'kubectl', 'delete', 'deployment', 'kubic-service'
+            commandLine 'kubectl', 'delete', '-f', file('src/main/kube')
             ignoreExitValue true
         }
     }
